@@ -1,0 +1,132 @@
+
+            output:
+            html_document: default
+            pdf_document: default
+            
+============================================================================
+
+============================================================================
+                  
+                  Title: "Harmful Weather Events"
+                  Author: "Christopher"
+                  Date: "July 21, 2019"
+                  Output: html_document
+                  
+============================================================================
+                          
+                          SYNOPSIS
+                          
+============================================================================
+Across the United States, excessive heat,tornadoes and flash floods are most harmful with respect to population health.
+
+Across the United States, tornadoes,thunderstorm, winds and flash floods have the greatest  economic consequences.
+
+Our raw data is taken from 
+[National Weather Service Instruction 10-1065][1].
+The events in the database start in the year 1950 and end in November 2011.
+Injuries,Fatalities, Property Damage and Crop Damage(in Dollars)are calculated during that times.
+
+[1]: https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf
+
+```{r setup, include=FALSE}
+
+
+##Data processing
+
+library(ggplot2)
+library(dplyr)
+library(utils)
+library(plyr)
+library(markdown)
+library(knitr)
+devtools::install_github("rstudio/rsconnect")
+```
+## Downloads and reads the dataset into R
+```{r cache = TRUE}
+url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+download.file(url,"StormData.csv.bz2")
+data <- read.csv("C:/Users/Hlangano/Downloads/repdata_data_StormData (4).csv")
+head(data)
+```
+## Subsetting the storm data in memory
+```{r}
+Subdata <- c("EVTYPE","FATALITIES","INJURIES","PROPDMG","PROPDMGEXP","CROPDMG","CROPDMGExP")
+```
+## Convert B,M,K,H units to calculate Property Damage
+
+
+ 
+ ## Convert B,M,K,H units to calculate Crop damage
+ 
+ ```{r}
+ Subdata$CropDamage <- 0
+ Subdata[Subdata$CROPDMGEXP == "B"]$CropDamage <- Subdata[Subdata$CROPDMGEXP == "B"]$CROPDMG*10^9
+ Subdata[Subdata$CROPDMGEXP == "M"]$CropDamage <- Subdata[Subdata$CROPDMGEXP == "M"]$CROPDMG*10^6
+ Subdata[Subdata$CROPDMGEXP == "K"]$CropDamage <- Subdata[Subdata$CROPDMGEXP == "K"]$CROPDMG*10^3
+ Subdata[Subdata$CROPDMGEXP == "H"]$CropDamage <- Subdata[Subdata$CROPDMGEXP == "H"]$CROPDMG*10^2
+```
+## What causes most injuries
+```{r}
+injuries <- aggregate(data$INJURIES,by = list(EVTYPE = data$EVTYPE),sum)
+ injuries <- injuries[order(injuries$x,decreasing = TRUE), ]
+ head(injuries)
+ 
+ ```
+ ## Plot for most injuries caused
+ 
+ ```{r}
+  ggplot(injuries[1:5,], aes(EVTYPE, y= x)) + geom_bar(stat ="identity") + xlab("Events Type")+ ylab("Number of Injuries")+ggtitle("Injuries by Event Type")
+```
+  ## The 5 most fatalities events
+  
+```{r}
+   fatalities <- aggregate(data$FATALITIES,by = list(EVTYPE = data$EVTYPE),sum)
+ fatalities <- fatalities[order(fatalities$x,decreasing = TRUE), ]
+head(fatalities)
+
+```
+
+ ## Plot for fatalities
+```{r,echo = TRUE, cache = TRUE}
+
+ 
+ ggplot(fatalities[1:5,], aes(EVTYPE, y= x)) + geom_bar(stat ="identity") + xlab("Events Type")+ ylab("Number of Fatalities")+ggtitle("Injuries by Event Type")
+
+```
+ ## We combined the exponents with the value
+ 
+```{r,echo = TRUE, cache=TRUE}
+Subdata$PROPDMGEXP <- 10^(as.numeric(Subdata$PROPDMGEXP))
+Subdata$CROPDMGEXP <- 10^(as.numeric(Subdata$CROPDMGEXP))
+```
+
+ ## The top 5 events which the highest total economic damages
+```{r,echo=TRUE, echo= TRUE}
+Subdata$CROPEXP[Subdata$CROPDMGEXP ==""] <- 1
+
+ # Assigning "0" to invalid exponent data
+Subdata$CROPEXP[Subdata$CROPDMGEXP == "?"] <- 0
+```
+## Calculating the property damage value
+```{r, echo=TRUE, cache= TRUE }
+Subdata$CROPDMGVAL <- Subdata$CROPDMG*Subdata$CROPEXP
+ # Assigning "0" to invalid exponet data
+Subdata$PROPEXP[Subdata$PROPDMGEXP ==""] <- 1
+Subdata$PROPEXP[Subdata$PRPODMGEXP =="+"] <- 0
+Subdata$PROPEXP[Subdata$PRPODMGEXP =="+"] <- 0
+ Subdata$PROPEXP[Subdata$PRPODMGEXP =="?"] <- 0
+
+Subdata$PROPEXP[Subdata$PRPODMGEXP =="+"] <- 0
+ Subdata$PROPEXP[Subdata$PRPODMGEXP =="?"] <- 0
+```
+## Results
+### Damage to human life
+Tornadoes caused most injuries and fatalities
+
+### Damage to Property and Crop
+
+Floods are responsible for the most economic damage.
+ 
+ 
+ 
+ 
